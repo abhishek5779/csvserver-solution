@@ -3,8 +3,34 @@ services:
     image: infracloudio/csvserver:latest
     container_name: mycontainer
     ports:
-      - "9393:9300"
-    env_file:
-      - csvserver.env
+      - "9393:9300"  # Application port (I.5) is 9300 inside container
     volumes:
       - ./inputFile:/csvserver/inputdata
+    env_file:
+      - csvserver.env
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus:v2.45.2
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    user: "root"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - monitoring
+    depends_on:
+      - csvserver
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data:
